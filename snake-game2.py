@@ -1,3 +1,5 @@
+import os
+os.environ['SDL_AUDIODRIVER'] = 'dummy'  # Suppress ALSA warnings
 
 import pygame
 import sys
