@@ -61,7 +61,10 @@ class Game:
                 self.game_over = True
                 return
 
-            if self.snake_pos[0] == self.food['pos']:
+            # Adjust collision detection for food
+            head_x, head_y = self.snake_pos[0]
+            food_x, food_y = self.food['pos']
+            if abs(head_x - food_x) < SNAKE_SIZE and abs(head_y - food_y) < SNAKE_SIZE:
                 self.score += FOOD_TYPES[self.food['type']]['points']
                 self.food = self.generate_food()
             else:
@@ -85,8 +88,19 @@ class Game:
                 head[1] >= height or head[1] < 0 or 
                 head in self.snake_pos[1:])
 
+    def handle_resize(self, event):
+        global width, height, screen
+        width, height = event.w, event.h
+        screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
+
     def draw(self):
         screen.fill(BACKGROUND)
+
+        # Draw grid lines
+        for x in range(0, width, GRID_SIZE):
+            pygame.draw.line(screen, GRID_COLOR, (x, 0), (x, height))
+        for y in range(0, height, GRID_SIZE):
+            pygame.draw.line(screen, GRID_COLOR, (0, y), (width, y))
 
         for pos in self.snake_pos:
             pygame.draw.rect(screen, SNAKE_BODY, pygame.Rect(pos[0], pos[1], SNAKE_SIZE, SNAKE_SIZE))
@@ -94,12 +108,16 @@ class Game:
         food_pos = self.food['pos']
         pygame.draw.rect(screen, FOOD_TYPES[self.food['type']]['color'], pygame.Rect(food_pos[0], food_pos[1], SNAKE_SIZE, SNAKE_SIZE))
 
-        score_text = self.font.render(f"Score: {self.score}", True, TEXT_COLOR)
+        # Dynamically adjust text size based on screen dimensions
+        dynamic_font_size = max(20, min(width // 32, height // 24))
+        dynamic_font = pygame.font.SysFont('arial', dynamic_font_size)
+
+        score_text = dynamic_font.render(f"Score: {self.score}", True, TEXT_COLOR)
         screen.blit(score_text, [10, 10])
 
         if self.game_over:
-            game_over_text = self.large_font.render("Game Over!", True, GAME_OVER_COLOR)
-            restart_text = self.font.render("Press R to Restart or Q to Quit", True, TEXT_COLOR)
+            game_over_text = dynamic_font.render("Game Over!", True, GAME_OVER_COLOR)
+            restart_text = dynamic_font.render("Press R to Restart or Q to Quit", True, TEXT_COLOR)
             screen.blit(game_over_text, [width//2 - 100, height//2 - 50])
             screen.blit(restart_text, [width//2 - 150, height//2])
 
@@ -113,6 +131,9 @@ def main():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
+            if event.type == pygame.VIDEORESIZE:
+                game.handle_resize(event)
 
             if event.type == pygame.KEYDOWN:
                 if game.game_over:
